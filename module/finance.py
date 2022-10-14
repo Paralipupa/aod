@@ -4,6 +4,8 @@ from module.file_readers import get_file_reader
 from module.company import Company
 from module.personal import Personal
 from module.polling import Polling
+import numpy as np
+import matplotlib.pyplot as plt
 
 
 class Finance:
@@ -29,6 +31,9 @@ class Finance:
         self.polling.read(data_reader)
         self.analysis()
         self.write(self.company.items, "company")
+        self.graph('average','Средняя зарплата')
+        self.graph('min','Минимальная зарплата')
+        self.graph('max','Максимальная зарплата')
 
     def analysis(self):
         for id, item in self.company.items.items():
@@ -39,33 +44,21 @@ class Finance:
                 filter(lambda x: x["company_id"] == id, self.polling.items.values())
             )
 
+            item["analisys"]["average"] = {
+                "real": reduce(self.calc_average, item["personals"], 0)
+                / len(item["personals"]),
+                "fantastic": reduce(self.calc_average, item["pollings"], 0)
+                / len(item["pollings"]),
+            }
+            item["analisys"]["min"] = {
+                "real": reduce(self.calc_min, item["personals"], 0),
+                "fantastic": reduce(self.calc_min, item["pollings"], 0),
+            }
+            item["analisys"]["max"] = {
+                "real": reduce(self.calc_max, item["personals"], 0),
+                "fantastic": reduce(self.calc_max, item["pollings"], 0),
+            }
 
-            item["analisys"].append(
-                {
-                    "average": {
-                        "real": reduce(self.calc_average, item["personals"], 0)
-                        / len(item["personals"]),
-                        "fantastic": reduce(self.calc_average, item["pollings"], 0)
-                        / len(item["pollings"]),
-                    }
-                }
-            )
-            item["analisys"].append(
-                {
-                    "min": {
-                        "real": reduce(self.calc_min, item["personals"], 0),
-                        "fantastic": reduce(self.calc_min, item["pollings"], 0),
-                    }
-                }
-            )
-            item["analisys"].append(
-                {
-                    "max": {
-                        "real": reduce(self.calc_max, item["personals"], 0),
-                        "fantastic": reduce(self.calc_max, item["pollings"], 0),
-                    }
-                }
-            )
         return
 
     def calc_average(self, val_pred: float, elem_curr: dict):
@@ -97,3 +90,28 @@ class Finance:
         ) as file:
             jstr = json.dumps(item, indent=4, ensure_ascii=False)
             file.write(jstr)
+
+    def graph(self, name:str='average', title:str=''):
+        #  Задаем смещение равное половине ширины прямоугольника:
+
+        plt.title = title
+        x1 = np.arange(1, len(self.company.items) + 1) - 0.2
+        x2 = np.arange(1, len(self.company.items) + 1) + 0.2
+
+        y1 = []
+        y2 = []
+        for item in self.company.items.values():
+            y1.append(item["analisys"][name]["real"])
+            y2.append(item["analisys"][name]["fantastic"])
+
+        fig, ax = plt.subplots()
+
+        ax.bar(x1, y1, width=0.4)
+        ax.bar(x2, y2, width=0.4)
+
+        ax.set_facecolor("seashell")
+        fig.set_figwidth(12)  #  ширина Figure
+        fig.set_figheight(6)  #  высота Figure
+        fig.set_facecolor("floralwhite")
+
+        plt.show()

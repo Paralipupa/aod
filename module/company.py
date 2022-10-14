@@ -18,6 +18,6 @@ class Company:
                         "type": record[3],
                         "personals": [],
                         "pollings": [],
-                        "analisys": []
+                        "analisys": {}
                     }
             index += 1
